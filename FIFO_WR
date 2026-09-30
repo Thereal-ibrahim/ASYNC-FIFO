@@ -1,0 +1,50 @@
+module FIFO_WR
+(
+    parameter FIFO_DEPTH = 8;
+    parameter Data_Width = 8;
+)  
+
+
+(
+input logic  Wr_CLK, RST,
+input logic Burst_Incoming,
+input logic [$clog2(FIFO_DEPTH) :0] Rd_Address,
+output logic [$clog2(FIFO_DEPTH) :0] Wr_Address,
+
+
+);
+
+// full if [$clog2(FIFO_DEPTH)] WrAdd != [$clog2(FIFO_DEPTH)] RAddr && [$clog2(FIFO_DEPTH)-1:0]....
+
+logic [$clog2(FIFO_DEPTH) :0] address;
+logic fifo_full;
+
+always @(posedge Wr_CLK or negedge RST) begin
+    if(!RST) begin
+        address <= 0;
+
+    end    
+
+    else begin
+        
+
+        if (Burst_Incoming && !fifo_full) begin
+            address = address + 1;
+        end
+
+
+
+    end
+
+
+end
+
+
+
+assign Wr_Address = address;
+assign fifo_full = ( Wr_Address[$clog2(FIFO_DEPTH)] != Rd_Address[$clog2(FIFO_DEPTH)] ) &&  ( Wr_Address[$clog2(FIFO_DEPTH)-1:0] == Rd_Address [$clog2(FIFO_DEPTH)-1:0] );
+
+
+
+
+endmodule

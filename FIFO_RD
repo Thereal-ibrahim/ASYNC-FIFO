@@ -1,0 +1,46 @@
+module FIFO_RD
+(
+    parameter FIFO_DEPTH = 8;
+    parameter Data_Width = 8;
+)  
+
+
+(
+input logic  Wr_CLK, RST,
+
+output logic [$clog2(FIFO_DEPTH) :0] Rd_Address,
+input logic [$clog2(FIFO_DEPTH) :0] Wr_Address,
+
+
+);
+
+
+logic [$clog2(FIFO_DEPTH) :0] address;
+logic fifo_mt;
+
+always @(posedge Wr_CLK or negedge RST) begin
+    if(!RST) begin
+        address <= 0;
+
+    end    
+
+    else begin
+        
+
+        if (Burst_Incoming) begin
+            address = address + 1;
+        end
+
+
+
+    end
+
+
+end
+
+
+
+
+assign fifo_mt = Wr_Address == Rd_Address
+
+endmodule
