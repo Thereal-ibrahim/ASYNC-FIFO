@@ -8,16 +8,17 @@ module FIFO_WR
 (
 input logic  Wr_CLK, RST,
 input logic Burst_Incoming,
-input logic [$clog2(FIFO_DEPTH) :0] Rd_Address,
-output logic [$clog2(FIFO_DEPTH) :0] Wr_Address,
-
+input logic [$clog2(FIFO_DEPTH) :0] Rd_Pointer, 
+output logic [$clog2(FIFO_DEPTH)-1 :0] Wr_Address,
+output logic [$clog2(FIFO_DEPTH) :0] Wr_Pointer 
 
 );
 
-// full if [$clog2(FIFO_DEPTH)] WrAdd != [$clog2(FIFO_DEPTH)] RAddr && [$clog2(FIFO_DEPTH)-1:0]....
+// full if [$clog2(FIFO_DEPTH)] WrPtr != [$clog2(FIFO_DEPTH)] RdPtr && [$clog2(FIFO_DEPTH)-1:0]....
 
-logic [$clog2(FIFO_DEPTH) :0] address;
+logic [$clog2(FIFO_DEPTH)-1 :0] address;
 logic fifo_full;
+logic [$clog2(FIFO_DEPTH) :0] pointer;
 
 always @(posedge Wr_CLK or negedge RST) begin
     if(!RST) begin
@@ -30,6 +31,8 @@ always @(posedge Wr_CLK or negedge RST) begin
 
         if (Burst_Incoming && !fifo_full) begin
             address = address + 1;
+            pointer = pointer + 1;
+            
         end
 
 
@@ -42,6 +45,7 @@ end
 
 
 assign Wr_Address = address;
+assign Wr_Pointer = pointer;
 assign fifo_full = ( Wr_Address[$clog2(FIFO_DEPTH)] != Rd_Address[$clog2(FIFO_DEPTH)] ) &&  ( Wr_Address[$clog2(FIFO_DEPTH)-1:0] == Rd_Address [$clog2(FIFO_DEPTH)-1:0] );
 
 
