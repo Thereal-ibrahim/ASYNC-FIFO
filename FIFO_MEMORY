@@ -6,7 +6,9 @@ module FIFO_MEMORY
 
 (
     
-    input logic Wr_CLK, Rd_CLK, n_MEM_RST,
+    input logic Wr_CLK, 
+    //Rd_CLK, 
+    //n_MEM_RST,   // we dont even need a reset logic in a memory
 
     input logic [DATA_WIDTH-1:0] Wr_Data, //data received from oustide module
     output logic [DATA_WIDTH-1:0] Rd_Data, //data sent to outside module
@@ -35,18 +37,8 @@ logic [DATA_WIDTH-1:0] register [0:FIFO_DEPTH-1];
 
 
 
-always @(posedge Wr_CLK or negedge n_MEM_RST) begin
+always @(posedge Wr_CLK) begin
     
-    if (!n_MEM_RST) begin
-        for (int i = 0; i<FIFO_DEPTH; i++) begin
-            register [i] <= '0;
-
-        end
-
-    end
-
-    else 
-
     if (Wr_en) begin
         register [Wr_Add] <= Wr_Data;
     end
@@ -54,22 +46,7 @@ always @(posedge Wr_CLK or negedge n_MEM_RST) begin
 end
 
 
-always @(posedge Rd_CLK or negedge n_MEM_RST) begin
-    
-    if (!n_MEM_RST) begin
-       Rd_Data <= '0;
-    end
-
-    else 
-
-    if (Rd_en) begin
-        Rd_Data <= register[Rd_Add];
-    end
-
-    else begin
-        Rd_Data <= 0; 
-    end
-end
+assign Rd_Data = Rd_en ? register [Rd_Add] : '0;
 
 
 
