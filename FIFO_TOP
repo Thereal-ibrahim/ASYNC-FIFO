@@ -1,12 +1,98 @@
 module FIFO_TOP#(
 
+    parameter DATA_WIDTH = 8,
+    parameter FIFO_DEPTH = 8,
+    parameter POINTER_WIDTH = $clog2(FIFO_DEPTH)
+
 )
 
 (
 
+input WR_CLK, RD_CLK, RST,
+input logic Wr_Req, Rd_Req,
 
+input logic [DATA_WIDTH-1:0] Wr_Data, //data received from oustide module
+output logic [DATA_WIDTH-1:0] Rd_Data //data sent to outside module
 
 );
+
+
+logic Fifo_Full;
+logic Fifo_Empty;
+logic wr_en;
+logic rd_en;
+
+logic [POINTER_WIDTH:0] Wr_Pointer;
+logic [POINTER_WIDTH:0] Rd_Pointer;
+logic [POINTER_WIDTH:0] Gray_Rd_Pointer;
+logic [POINTER_WIDTH:0] Sync_Wr_Pointer;
+logic [POINTER_WIDTH:0] Sync_Gray_Rd_Pointer;
+
+assign wr_en = Wr_Req && !Fifo_Full;
+assign rd_en = Rd_Req && !Fifo_Empty;
+
+FIFO_WR #(
+    .FIFO_DEPTH(FIFO_DEPTH),
+    .Data_Width(DATA_WIDTH),
+    .POINTER_WIDTH(POINTER_WIDTH)
+) fifo_wr (
+    .Wr_CLK(WR_CLK),
+    .RST(RST),
+    .Wr_Req(wr_en),
+    .Rd_Pointer(Sync_Gray_Rd_Pointer),
+    .Wr_Pointer(Wr_Pointer),
+    .Fifo_Full(Fifo_Full)
+);
+
+FIFO_RD #(
+    .FIFO_DEPTH(FIFO_DEPTH)
+) fifo_rd (
+    .RD_CLK(RD_CLK),
+    .RST(RST),
+    .Wr_Pointer(Sync_Wr_Pointer),
+    .Rd_Req(rd_en),
+    .Rd_Pointer(Rd_Pointer),
+    .Gray_Rd_Pointer(Gray_Rd_Pointer),
+    .Fifo_Empty(Fifo_Empty)
+);
+
+DATA_SYNC #(
+    .DATA_WIDTH(POINTER_WIDTH + 1)
+) sync_wr_pointer (
+    .CLK1(WR_CLK),
+    .CLK2(RD_CLK),
+    .RST(RST),
+    .Data_In(Wr_Pointer),
+    .Data_Out(Sync_Wr_Pointer)
+);
+
+DATA_SYNC #(
+    .DATA_WIDTH(POINTER_WIDTH + 1)
+) sync_rd_pointer (
+    .CLK1(RD_CLK),
+    .CLK2(WR_CLK),
+    .RST(RST),
+    .Data_In(Gray_Rd_Pointer),
+    .Data_Out(Sync_Gray_Rd_Pointer)
+);
+
+FIFO_MEMORY #(
+    .DATA_WIDTH(DATA_WIDTH),
+    .FIFO_DEPTH(FIFO_DEPTH)
+) fifo_memory (
+    .Wr_CLK(WR_CLK),
+    .Wr_Data(Wr_Data),
+    .Rd_Data(Rd_Data),
+    .Wr_en(wr_en),
+    .Rd_en(rd_en),
+    .Wr_Add(Wr_Pointer[POINTER_WIDTH-1:0]),
+    .Rd_Add(Rd_Pointer[POINTER_WIDTH-1:0])
+);
+
+
+
+
+
 
 
 

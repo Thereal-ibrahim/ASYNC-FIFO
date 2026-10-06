@@ -5,23 +5,32 @@ module FIFO_RD
 
 (
     input logic RD_CLK, RST,
-    input logic Wr_Pointer,
+    input logic [$clog2(FIFO_DEPTH) : 0] Wr_Pointer, // binary
     input logic Rd_Req,
-    output logic Rd_Pointer,
+    output logic [$clog2(FIFO_DEPTH) : 0] Rd_Pointer, // for the memory (take the least significant bits)
+    output logic [$clog2(FIFO_DEPTH) : 0] Gray_Rd_Pointer,
     output logic Fifo_Empty
+
 );
 
 
+logic [$clog2(FIFO_DEPTH) : 0] rd_pointer
+logic [$clog2(FIFO_DEPTH) : 0] gray_rd_pointer;
+assign gray_rd_pointer = rd_pointer ^ (rd_pointer >>1);
+assign Rd_Pointer = rd_pointer;
 
+
+
+//incrementing the binary combinational pointer
 always @(posedge RD_CLK or negedge RST )begin
     if(!RST) begin
-        Rd_Pointer <= 0;
+        rd_pointer <= 0;
     end
 
     else begin
         
         if (!Fifo_Empty && Rd_Req) begin
-            Rd_Pointer <= Rd_Pointer +1;
+            rd_pointer <= rd_pointer +1;
         end
         
     end
@@ -29,6 +38,22 @@ always @(posedge RD_CLK or negedge RST )begin
 
 
 end
+
+////////////////////////////try to do the Gray_Rd ptr like the Rd pointer (comb and seq)...
+                          //and check if it makes a difference
+
+always @(posedge RD_CLK or negedge RST ) begin
+    if(!RST) begin
+        Gray_Rd_Pointer <= 0;
+    end
+
+    else begin
+        Gray_Rd_Pointer <= gray_rd_pointer;
+    end
+
+
+end
+
 
 
 assign Fifo_Empty = Wr_Pointer == Rd_Pointer;

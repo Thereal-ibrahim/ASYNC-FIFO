@@ -1,15 +1,16 @@
 module FIFO_WR
 #(
     parameter FIFO_DEPTH = 8,
-    parameter Data_Width = 8
+    parameter Data_Width = 8,
+    parameter POINTER_WIDTH = $clog2(FIFO_DEPTH)
 )  
 
 
 (
 input logic  Wr_CLK, RST,
-input logic Burst_Incoming,
-input logic [$clog2(FIFO_DEPTH) :0] Rd_Pointer, 
-output logic [$clog2(FIFO_DEPTH) :0] Wr_Pointer,
+input logic Wr_Req,
+input logic [POINTER_WIDTH :0] Rd_Pointer, 
+output logic [POINTER_WIDTH :0] Wr_Pointer,
 output logic Fifo_Full
 );
 
@@ -18,8 +19,8 @@ output logic Fifo_Full
 
 
 
-logic [$clog2(FIFO_DEPTH) :0] pointer;
-
+logic [POINTER_WIDTH :0] pointer;
+logic [POINTER_WIDTH :0] gray_pointer;
 logic fifo_full;
 
 
@@ -32,12 +33,12 @@ always @(posedge Wr_CLK or negedge RST) begin
     else begin
         
 
-        if (Burst_Incoming && !Fifo_Full) begin
+        if (Wr_Req && !Fifo_Full) begin
             pointer <= pointer + 1;
             
         end
 
-        fifo_full <= ( Wr_Pointer[$clog2(FIFO_DEPTH)] != Rd_Pointer[$clog2(FIFO_DEPTH)] ) &&  ( Wr_Pointer[$clog2(FIFO_DEPTH)-1:0] == Rd_Pointer [$clog2(FIFO_DEPTH)-1:0] );
+        fifo_full <= ( Wr_Pointer[POINTER_WIDTH] != Rd_Pointer[POINTER_WIDTH] ) &&  ( Wr_Pointer[POINTER_WIDTH-1:0] == Rd_Pointer [POINTER_WIDTH-1:0] );
 
     end
 
@@ -45,7 +46,7 @@ always @(posedge Wr_CLK or negedge RST) begin
 end
 
 
-
+assign gray_pointer = Wr_Pointer ^ (Wr_Pointer >> 1);
 assign Wr_Pointer = pointer;
 assign Fifo_Full = fifo_full;
 
