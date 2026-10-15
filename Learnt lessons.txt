@@ -1,0 +1,48 @@
+Circular dependency is a no!
+Ex: 
+
+//assign rd_en = Rd_Req & !empty;
+//assign empty = (next_gray_rd_ptr == Gray_Wr_Ptr);
+//assign next_rd_ptr = rd_ptr + rd_en;
+
+This will actually make an error with the simulation before anything else!
+** Error: (vsim-3601) Iteration limit reached at time 62500 ps.
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+whether in the full or empty check you need to check for the next pointer.
+because the flag is used in the next cycle (not the current) to decide an increment
+
+
+Ex:
+
+in Rd domain:
+Cycle 1: 
+Wr_ptr = 3
+Rd_Ptr = 2
+
+empty flag is assesed as 0 from the previous cycle --> increment ptr (Rd_ptr = 3)
+empty flag is assessed as 0 in this cycle as well (2!=3)
+Rd_ptr is read as 3 in the next cycle
+empty is read as low (0) in the next cycle
+
+
+Cycle 2: 
+Wr_ptr = 3
+Rd_Ptr = 3
+
+empty flag is assesed as 0 from the previous cycle --> increment ptr (Rd_ptr = 4)
+empty flag is assessed as 1 in this cycle as well (3=3)
+Rd_ptr is read as 3 in the next cycle
+empty is read as low (0) in the next cycle
+
+
+
+TL;DR 
+The full flag should be calculated from the next write pointer, 
+because it must indicate whether the FIFO will become full after the current write.
