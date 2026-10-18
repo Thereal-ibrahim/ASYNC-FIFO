@@ -46,3 +46,63 @@ empty is read as low (0) in the next cycle
 TL;DR 
 The full flag should be calculated from the next write pointer, 
 because it must indicate whether the FIFO will become full after the current write.
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+Testbench data must be changed away from the sampling clock edge.
+
+Where it happened:
+
+- File: `FIFO_tb.sv`
+- Task: `burst_write`
+- Original write sequence: lines 91-95
+
+The problematic sequence was:
+
+```systemverilog
+Wr_Data = $urandom_range(0, 255);
+Wr_Req = 1;
+@(posedge WR_CLK);
+```
+
+At the `posedge WR_CLK`, the FIFO memory and the testbench monitor both
+sampled signals. On returning from that event, the next loop iteration
+immediately changed `Wr_Data` for the next word. This created a same-time
+simulation race: the write logger could observe the new value while the FIFO
+memory captured the previous value. The result was that the final `Rd_Data`
+could appear to be the pre-last `Wr_Data`.
+
+If `Wr_Data` and `Wr_Req` are updated immediately after `@(posedge WR_CLK)`,
+the testbench and the FIFO write logic can race at the same simulation time.
+The logger may record the new `Wr_Data` while the FIFO memory captures the
+previous value. This can make the final `Rd_Data` appear to be the pre-last
+write.
+
+How it was solved:
+
+The corrected sequence is now in `FIFO_tb.sv`, lines 91-99:
+
+```systemverilog
+@(negedge WR_CLK);
+Wr_Data = $urandom_range(0, 255);
+Wr_Req = 1;
+@(posedge WR_CLK);
+...
+@(negedge WR_CLK);
+Wr_Req = 0;
+```
+
+Drive the next write before the sampling edge, for example on the falling edge:
+
+```systemverilog
+@(negedge WR_CLK);
+Wr_Data = $urandom_range(0, 255);
+Wr_Req = 1;
+@(posedge WR_CLK);
+```
+
+This gives the data and request time to settle before the FIFO samples them.

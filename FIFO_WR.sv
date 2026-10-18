@@ -1,7 +1,7 @@
 module FIFO_WR
 #(
 
-parameter FIFO_DEPTH = 8,
+parameter FIFO_DEPTH = 16,
 parameter DATA_WIDTH = 8,
 parameter POINTER_WIDTH = $clog2(FIFO_DEPTH)+1
 )
@@ -29,7 +29,7 @@ logic [POINTER_WIDTH-1:0] next_wr_pointer;
 logic [POINTER_WIDTH-1:0] next_gray_wr_pointer;
 
 assign next_wr_pointer =
-    wr_pointer + (Wr_Req && !fifo_full);
+    wr_pointer + (Wr_Req && !FIFO_FULL);
 
 assign next_gray_wr_pointer =
     (next_wr_pointer >> 1) ^ next_wr_pointer;
